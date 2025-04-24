@@ -23,7 +23,7 @@ you can get your LN address as:
 
 Example ([example.js](./example.js)):
 
-```
+```js
 import { getPublicKey, nip19 } from "nostr-tools";
 
 const nwc =
