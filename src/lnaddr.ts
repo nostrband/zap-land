@@ -1,12 +1,12 @@
 import http from "node:http";
 import { Event, generateSecretKey, nip19 } from "nostr-tools";
-import { fetchPubkeyRelays, fetchReplaceableEvent } from "./modules/nostr";
+import { fetchReplaceableEvent } from "./modules/nostr";
 import { NWCClient } from "./modules/nwc-client";
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2"; // ESM & Common.js
 import { bytesToHex } from "@noble/hashes/utils";
 import { now } from "./modules/utils";
 
-const KIND_SERVICE_INFO = 13195;
+const KIND_SERVICE_INFO = 13196;
 const CACHE_TTL = 3600;
 const cache = new Map<
   string,
@@ -34,13 +34,13 @@ async function getWalletInfo(walletPubkey: string, res: http.ServerResponse) {
   const cached = cache.get(walletPubkey);
   if (!cached || now() - cached.timestamp > CACHE_TTL) {
     // wallet relays
-    const relays = await fetchPubkeyRelays(walletPubkey);
-    console.log("wallet relays", relays);
-    if (!relays.length) {
-      res.writeHead(504, CORS_HEADERS);
-      res.end("Wallet relays not found");
-      return;
-    }
+    // const relays = await fetchPubkeyRelays(walletPubkey);
+    // console.log("wallet relays", relays);
+    // if (!relays.length) {
+    //   res.writeHead(504, CORS_HEADERS);
+    //   res.end("Wallet relays not found");
+    //   return;
+    // }
 
     // wallet info
     const info = await fetchReplaceableEvent(walletPubkey, KIND_SERVICE_INFO);
@@ -49,6 +49,10 @@ async function getWalletInfo(walletPubkey: string, res: http.ServerResponse) {
       res.end("Wallet info not found");
       return;
     }
+
+    const relays = info.tags
+      .filter((t) => t.length > 1 && t[0] === "relay")
+      .map((t) => t[1]);
 
     cache.set(walletPubkey, {
       timestamp: now(),
@@ -177,4 +181,3 @@ export async function lnaddrServer(opts: { port: number }) {
   });
   server.listen(opts.port);
 }
-
