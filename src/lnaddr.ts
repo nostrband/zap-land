@@ -131,19 +131,26 @@ export async function lnaddrServer(opts: { port: number }) {
       });
       client.start();
 
-      const invoice = await client.makeInvoiceFor({
-        pubkey: userPubkey,
-        amount,
-        description_hash: nostr ? undefined : bytesToHex(sha256(description)),
-        zap_request: nostr ? nostr : undefined,
-      });
+      try {
+        const invoice = await client.makeInvoiceFor({
+          pubkey: userPubkey,
+          amount,
+          description_hash: nostr ? undefined : bytesToHex(sha256(description)),
+          zap_request: nostr ? nostr : undefined,
+        });
+        client.dispose();
 
-      client.dispose();
-
-      reply = {
-        pr: invoice.invoice,
-        routes: [],
-      };
+        reply = {
+          pr: invoice.invoice,
+          routes: [],
+        };
+      } catch (e) {
+        client.dispose();
+        console.log("Failed to fetch invoice", e);
+        res.writeHead(500, CORS_HEADERS);
+        res.end("Failed to fetch invoice");
+        return;
+      }
     } else {
       // lud06 callback reply
 
